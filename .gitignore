@@ -13,3 +13,6 @@ venv/
 
 # Handson generated config
 identity_config.json
+
+# Kiro ローカル設定（steering など。公開しない）
+.kiro/
