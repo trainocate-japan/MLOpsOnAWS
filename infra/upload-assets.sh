@@ -10,6 +10,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 HANDSON_DIR="$REPO_ROOT/handson"
 
+# AWS CLI プロファイル
+# 特定のプロファイルを使う場合は、実行前に AWS_PROFILE を設定してください。
+#   例: AWS_PROFILE=my-profile ./infra/upload-assets.sh
+# 未設定の場合は AWS CLI の既定の解決（default プロファイル等）に従います。
+
 # デフォルト設定
 REGION="${AWS_REGION:-us-east-1}"
 PREFIX="handson-assets"
@@ -23,6 +28,7 @@ echo " ハンズオン資材 S3 アップロード"
 echo " MLOps Engineering on AWS"
 echo "=============================================="
 echo ""
+echo "  プロファイル: ${AWS_PROFILE:-(既定)}"
 echo "  リージョン: $REGION"
 echo "  バケット: $BUCKET_NAME"
 echo "  プレフィックス: $PREFIX"
