@@ -1,0 +1,15 @@
+text/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+*.swp
+
+# Handson generated config
+identity_config.json
