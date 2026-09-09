@@ -3,9 +3,9 @@
 ## コース概要
 
 このハンズオンガイドは「MLOps Engineering on AWS（日本語）」研修コースの
-各モジュール（モジュール 1 〜 モジュール 6）に対応した、実践的なシナリオと手順を提供します。
-スライドで学んだ MLOps の概念（Initial → Repeatable → Reliable → Scalable の成熟度モデル）を、
-Amazon SageMaker AI を使って実際に手を動かして確認することで理解を深めることを目的としています。
+実践的なシナリオと手順を提供します。MLOps の概念（Initial → Repeatable → Reliable → Scalable の
+成熟度モデル）を、Amazon SageMaker AI を使って実際に手を動かして確認することで理解を深めることを
+目的としています。
 
 各モジュールのフォルダには次の 3 種類のファイルがあります。
 
@@ -20,12 +20,14 @@ Amazon SageMaker AI を使って実際に手を動かして確認することで
 
 | モジュール | テーマ | フォルダ | 目安時間 |
 |-----------|--------|---------|---------|
-| M01 | MLOps の導入（ライフサイクル・成熟度モデル・DevOps との比較・ガバナンス） | `M01-intro-mlops` | 40分 |
-| M02 | Initial MLOps: SageMaker Studio の実験環境（組み込みアルゴリズム・BYOS/BYOC/BYOM） | `M02-experimentation-studio` | 60分 |
+| M02 | Initial MLOps: SageMaker Studio の実験環境（組み込みアルゴリズム・BYOS） | `M02-experimentation-studio` | 60分 |
 | M03 | Repeatable MLOps: リポジトリ（データバージョニング・Feature Store・Model Registry） | `M03-repositories` | 60分 |
-| M04 | Repeatable MLOps: オーケストレーション（SageMaker Pipelines・推論オプション） | `M04-orchestration` | 60分 |
+| M04 | Repeatable MLOps: オーケストレーション（SageMaker Pipelines・エンドポイント） | `M04-orchestration` | 50分 |
 | M05 | Reliable MLOps: スケーリングとテスト（オートスケーリング・A/B/シャドー・ブルーグリーン） | `M05-scaling-testing` | 60分 |
 | M06 | Reliable MLOps: モニタリング（Model Monitor・データドリフト・リネージ・再学習） | `M06-monitoring` | 60分 |
+
+> 概念中心のモジュール（MLOps の導入など）は、実際に AWS を操作するハンズオンを伴わないため
+> 本ガイドには含めていません。上記は手を動かして確認できるモジュールのみを扱います。
 
 ## 前提条件
 
@@ -82,11 +84,6 @@ handson/
 ├── README.md                        # このファイル
 ├── cleanup_all.sh                   # 全リソース一括削除スクリプト
 ├── common.py                        # 共通ユーティリティ（ロール解決・リージョン・命名）
-├── M01-intro-mlops/
-│   ├── scenario.md
-│   ├── steps.md
-│   ├── ml_lifecycle_explorer.py     # ML ライフサイクルと成熟度モデルの確認
-│   └── devops_vs_mlops.py           # DevOps と MLOps の比較
 ├── M02-experimentation-studio/
 │   ├── scenario.md
 │   ├── steps.md
@@ -106,8 +103,7 @@ handson/
 │   ├── steps.md
 │   ├── build_pipeline.py            # SageMaker Pipelines（処理→学習→評価→条件→登録）
 │   ├── evaluate.py                  # パイプラインの評価ステップ用スクリプト
-│   ├── deploy_realtime_endpoint.py  # リアルタイムエンドポイントのデプロイ
-│   └── inference_options.py         # 推論オプション（リアルタイム/サーバーレス/非同期/バッチ）の比較
+│   └── deploy_realtime_endpoint.py  # リアルタイムエンドポイントのデプロイ
 ├── M05-scaling-testing/
 │   ├── scenario.md
 │   ├── steps.md

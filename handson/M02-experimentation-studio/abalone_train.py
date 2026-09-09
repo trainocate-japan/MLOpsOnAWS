@@ -8,7 +8,7 @@ SageMaker は環境変数とコマンドライン引数で入出力パスを渡�
   - モデル出力: SM_MODEL_DIR（ここに保存したものが model.tar.gz になる）
   - ハイパーパラメータ: コマンドライン引数として渡される
 
-SageMaker 標準フォルダ構造（スライド「SageMaker 標準フォルダ」対応）に従います。
+SageMaker 標準のフォルダ構造に従います。
 """
 
 import argparse

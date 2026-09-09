@@ -9,7 +9,7 @@
   4. RegisterModel: Model Registry に登録
 
 パイプラインパラメータ（instance_type・rmse_threshold）で反復可能性を確保します。
-ナレッジチェック対応: しきい値を満たすモデルだけを登録するには「条件ステップ」を使います。
+しきい値を満たすモデルだけを登録するには「条件ステップ」を使います。
 
 実行:
     python build_pipeline.py            # パイプラインを作成/更新して実行
