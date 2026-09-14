@@ -83,7 +83,7 @@ echo ""
 # ------------------------------------------
 # 4. 起動中の EC2 インスタンスの資材を更新
 # ------------------------------------------
-STACK_NAME="mlops-handson-demo-env"
+STACK_NAME="${STACK_NAME:-MLOpsOnAWSDemo}"
 INSTANCE_ID=$(aws cloudformation describe-stacks \
     --stack-name "$STACK_NAME" \
     --region "$REGION" \
