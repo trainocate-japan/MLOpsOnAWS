@@ -81,7 +81,7 @@ def main():
     fg.ingest(data_frame=df, max_workers=2, wait=True)
     print(f"OK {len(df)} 件の特徴量レコードを取り込みました。")
 
-    # オンラインストアから 1 件取得して確認
+    # オンラインストアから 1 件取得して確認（低レイテンシーのリアルタイム取得）
     rec = session.boto_session.client("sagemaker-featurestore-runtime").get_record(
         FeatureGroupName=FEATURE_GROUP_NAME, RecordIdentifierValueAsString="0"
     )
@@ -89,8 +89,27 @@ def main():
     for f in rec.get("Record", [])[:5]:
         print(f"  {f['FeatureName']} = {f['ValueAsString']}")
 
+    # オフラインストア（S3 の履歴データ）の場所を表示
+    # create() で s3_uri を指定したため、オフラインストアも自動で有効化されている。
+    # 取り込んだレコードは数分の遅延で下記プレフィックス配下に Parquet として書き出される。
+    desc = fg.describe()
+    offline_uri = (
+        desc.get("OfflineStoreConfig", {})
+        .get("S3StorageConfig", {})
+        .get("ResolvedOutputS3Uri")
+    )
+    print("\nオフラインストア（S3 の履歴データ）の場所:")
+    if offline_uri:
+        print(f"  {offline_uri}")
+        print("  ※ 取り込みから S3 反映まで数分かかります。反映後に以下で確認できます:")
+        print(f"     aws s3 ls --recursive {offline_uri}/")
+    else:
+        print("  （オフラインストアは設定されていません）")
+
     print("\nポイント: Feature Store により特徴量が再利用可能な"
           "『信頼できる唯一の情報源』になります。")
+    print("  - オンラインストア: 低レイテンシーのリアルタイム取得（推論向け）")
+    print("  - オフラインストア: S3 上の履歴データ（学習・バッチ向け）")
     print("→ cleanup_all.sh で Feature Group を削除できます。")
 
 

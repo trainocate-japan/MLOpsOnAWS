@@ -9,6 +9,16 @@ cd ~/handson/M02-experimentation-studio
 echo $SAGEMAKER_ROLE_ARN   # ロール ARN が表示されることを確認
 ```
 
+> **`SAGEMAKER_ROLE_ARN` が空で表示される場合**
+> 環境変数は `~/.bashrc` / `~/.bash_profile` に設定済みですが、SSM セッションの
+> 入り方によっては現在のシェルにまだ読み込まれていないことがあります。
+> 次を実行して現在のシェルに読み込んでください。
+>
+> ```bash
+> source ~/.bashrc
+> echo $SAGEMAKER_ROLE_ARN   # arn:aws:iam::<ACCOUNT_ID>:role/MLOpsHandsonSageMakerRole が表示されれば OK
+> ```
+
 ### ステップ 1.2: SageMaker Domain を確認
 
 ```bash
