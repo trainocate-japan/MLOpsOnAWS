@@ -22,6 +22,7 @@ import os
 import io
 import argparse
 import boto3
+import botocore
 import pandas as pd
 import sagemaker
 from sagemaker.model_monitor import DefaultModelMonitor, CronExpressionGenerator
@@ -82,22 +83,60 @@ def create():
     )
     print(f"OK ベースライン生成: {baseline_results}")
     print("  - statistics.json（統計） / constraints.json（制約）")
+    print("  確認:")
+    print(f"    aws s3 ls {baseline_results}/ --recursive")
 
     print("\n監視スケジュールを作成中（1 時間ごと）...")
-    monitor.create_monitoring_schedule(
-        monitor_schedule_name=SCHEDULE_NAME,
-        endpoint_input=ENDPOINT_NAME,
-        output_s3_uri=f"s3://{bucket}/{PREFIX}/monitor/reports",
-        statistics=monitor.baseline_statistics(),
-        constraints=monitor.suggested_constraints(),
-        schedule_cron_expression=CronExpressionGenerator.hourly(),
-        enable_cloudwatch_metrics=True,
-    )
+    try:
+        monitor.create_monitoring_schedule(
+            monitor_schedule_name=SCHEDULE_NAME,
+            endpoint_input=ENDPOINT_NAME,
+            output_s3_uri=f"s3://{bucket}/{PREFIX}/monitor/reports",
+            statistics=monitor.baseline_statistics(),
+            constraints=monitor.suggested_constraints(),
+            schedule_cron_expression=CronExpressionGenerator.hourly(),
+            enable_cloudwatch_metrics=True,
+        )
+    except botocore.exceptions.ClientError as e:
+        msg = e.response.get("Error", {}).get("Message", "")
+        # SageMaker Model Monitor は 2026-06-30 付でメンテナンスモードに移行し、
+        # 新規顧客はジョブ定義（CreateDataQualityJobDefinition）を作成できない。
+        # 参照: https://docs.aws.amazon.com/general/latest/gr/maintenance_services.html
+        if "maintenance mode" in msg or "not available to new customers" in msg:
+            _print_maintenance_notice(baseline_results)
+            return
+        raise
+
     print(f"OK 監視スケジュール作成: {SCHEDULE_NAME}")
     print("\nポイント: キャプチャデータをベースラインと比較し、制約違反（ドリフト）を")
     print("時間ごとに検出します。CloudWatch メトリクスでアラームも設定できます。")
     print("注意: スケジュールは定期的にインスタンスを起動します。完了後は削除してください。")
     print("削除: python model_monitor_baseline.py --delete")
+
+
+def _print_maintenance_notice(baseline_results):
+    """Model Monitor がメンテナンスモードでスケジュール作成できない場合の案内。"""
+    print("\n" + "=" * 66)
+    print(" 注意: SageMaker Model Monitor はメンテナンスモードです")
+    print("=" * 66)
+    print("Amazon SageMaker AI – Model Monitor は 2026-06-30 付でメンテナンス")
+    print("モードに移行しました。新規のお客様は監視スケジュール（データ品質ジョブ")
+    print("定義）を新規作成できません（既存のお客様は影響を受けません）。")
+    print("  参照: https://docs.aws.amazon.com/general/latest/gr/maintenance_services.html")
+    print("")
+    print("このハンズオンで学べること（スケジュール作成なしでも成立）:")
+    print(f"  - ベースライン（statistics.json / constraints.json）は生成済み:")
+    print(f"      {baseline_results}")
+    print("  - constraints.json には各特徴量の期待レンジや型などの『制約』が入ります。")
+    print("  - キャプチャデータ（enable_data_capture.py で S3 に保存）を")
+    print("    このベースラインと突き合わせることで、ドリフト検知の考え方を確認できます。")
+    print("")
+    print("推奨代替: 定期監視が必要な場合は、キャプチャデータと constraints.json を")
+    print("比較する処理を自前のジョブ（Processing / Lambda + EventBridge など）として")
+    print("実装し、逸脱を CloudWatch メトリクス/アラームに送る方式が使えます。")
+    print("")
+    print("→ スケジュールは作成されていないため削除は不要です。")
+    print("  生成したベースラインを確認したら次へ進んでください。")
 
 
 def delete():

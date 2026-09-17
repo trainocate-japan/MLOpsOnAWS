@@ -1,6 +1,15 @@
 # モジュール 6: Reliable MLOps - モニタリング - ハンズオン手順
 
-> 監視スケジュールと監視エンドポイントは課金対象です。**完了後は必ず削除**してください。
+> 監視エンドポイントは課金対象です。**完了後は必ず削除**してください。
+
+> **重要（サービスの提供状況）**: Amazon SageMaker AI – Model Monitor は **2026-06-30 付でメンテナンスモード**に移行しました。
+> **新規のお客様は監視スケジュール（データ品質ジョブ定義）を新規作成できません**（既存のお客様は影響を受けません）。
+> 参照: [AWS サービスのメンテナンスモード](https://docs.aws.amazon.com/general/latest/gr/maintenance_services.html)
+>
+> 本ハンズオンは、この制約下でも学習が成立するよう次の方針で進めます。
+> - **ベースライン生成**（statistics.json / constraints.json）までは実行して確認します。
+> - **監視スケジュール作成**は試行し、メンテナンスモードで失敗した場合はスクリプトが自動で案内を表示して正常終了します（エラーで止まりません）。
+> - スケジュールの代替として、**キャプチャデータを constraints.json と突き合わせて**ドリフトの考え方を学びます。
 
 ## パート 1: データキャプチャの有効化（15分）
 
@@ -24,48 +33,62 @@ python enable_data_capture.py
 
 ---
 
-## パート 2: ベースラインと監視スケジュール（20分）
+## パート 2: ベースラインの作成（20分）
 
-### ステップ 2.1: ベースラインを作成して監視をスケジュール
+### ステップ 2.1: ベースラインを生成する
 
 ```bash
 python model_monitor_baseline.py
 ```
 
-- 学習データから **statistics.json（統計）** と **constraints.json（制約）** を生成
-- **1 時間ごと**の監視スケジュールを作成（キャプチャデータをベースラインと比較）
-- CloudWatch メトリクスを有効化
+- 学習データから **statistics.json（統計）** と **constraints.json（制約）** を生成します。
+- 続けて監視スケジュール作成を**試行**します。
+  - メンテナンスモードの環境では `ValidationException`（maintenance mode）となり、
+    スクリプトが**代替案内を表示して正常終了**します（エラーで止まりません）。
+  - スケジュールが作成された場合のみ、後片付けで `--delete` が必要になります。
 
-### ステップ 2.2: ベースライン結果を確認
+### ステップ 2.2: ベースライン結果（constraints.json）を確認
 
 ```bash
-aws s3 ls s3://$(python -c "import sys,os;sys.path.append('..');from common import get_bucket;print(get_bucket())")/mlops-handson/monitor/baseline-results/ --recursive
+BUCKET=$(python -c "import sys;sys.path.append('..');from common import get_bucket;print(get_bucket())")
+aws s3 ls s3://$BUCKET/mlops-handson/monitor/baseline-results/ --recursive
+
+# constraints.json を取得して中身を確認（各特徴量の期待レンジ・型など）
+aws s3 cp s3://$BUCKET/mlops-handson/monitor/baseline-results/constraints.json - | head -40
 ```
+
+- `constraints.json` に各特徴量の期待レンジ・型・欠損許容などの「制約」が入っていることを確認します。
+- この制約が、次のパートで送るドリフトデータとの比較の基準になります。
 
 ---
 
-## パート 3: データドリフトの検知（15分）
+## パート 3: データドリフトの確認（15分）
 
-### ステップ 3.1: ドリフトを発生させる
+### ステップ 3.1: ドリフトした入力を送る
 
 ```bash
 python generate_drift_traffic.py
 ```
 
-- ベースラインから大きく外れた入力（極端に大きいアワビ）を送信
-- 次回の監視ジョブで**制約違反（データドリフト）**として検出される
+- ベースラインから大きく外れた入力（極端に大きいアワビ）を送信します。
+- 送信した入力はデータキャプチャ機能で S3 に保存されます。
 
-### ステップ 3.2: 監視実行の確認
+### ステップ 3.2: キャプチャデータをベースラインと突き合わせる
 
 ```bash
-aws sagemaker list-monitoring-executions \
-  --monitoring-schedule-name mlops-handson-abalone-dq-schedule \
-  --region us-east-1
+BUCKET=$(python -c "import sys;sys.path.append('..');from common import get_bucket;print(get_bucket())")
+aws s3 ls s3://$BUCKET/mlops-handson/monitor/datacapture/mlops-handson-abalone-monitored/ --recursive
 ```
 
-> 監視ジョブは 1 時間ごとに実行されます。直近の実行結果 (`ProcessingJobStatus` と違反) を確認します。
+- キャプチャされた入力の `length` などが、`constraints.json` の期待レンジを大きく外れていることを確認します。
+  これが「データドリフトを検知する」という考え方の中核です。
 
-**ディスカッション**: ML モデルを監視するとき、どんな運用上の課題が予想されますか？
+> **メンテナンスモードでのドリフト検知の代替**: SageMaker の自動監視スケジュールが使えない場合でも、
+> キャプチャデータ（S3）と `constraints.json` を比較する処理を自前のジョブ
+> （SageMaker Processing / Lambda + EventBridge など）として実装し、逸脱を CloudWatch メトリクス・
+> アラームに送れば、同等のドリフト監視を構成できます。
+
+**ディスカッション**: ML モデルを監視するとき、どんな運用上の課題が予想されますか？（監視の粒度・しきい値の決め方・誤検知・コスト）
 
 ---
 
@@ -98,16 +121,20 @@ python lineage_tracking_demo.py
 ## 全リソースの削除（重要）
 
 ```bash
-python model_monitor_baseline.py --delete    # 監視スケジュール
-python enable_data_capture.py --delete        # エンドポイント
+python model_monitor_baseline.py --delete    # 監視スケジュール（作成された場合のみ。未作成ならスキップされます）
+python enable_data_capture.py --delete        # エンドポイント（課金対象。必ず削除）
 # または
 cd ~/handson && bash cleanup_all.sh
 ```
+
+> メンテナンスモードでスケジュールが作成されなかった場合、`--delete` は「見つからない（スキップ）」と表示されます。
+> 課金の観点で最も重要なのは**エンドポイントの削除**です。
 
 ---
 
 ## 参考ドキュメント
 
+- [AWS サービスのメンテナンスモード（Model Monitor を含む）](https://docs.aws.amazon.com/general/latest/gr/maintenance_services.html)
 - [Amazon SageMaker Model Monitor](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html)
 - [Capture data](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-capture.html)
 - [Create a Baseline](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-byoc-constraints.html)

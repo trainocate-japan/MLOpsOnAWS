@@ -58,10 +58,20 @@ def main():
         time.sleep(0.3)
 
     print("\nOK ドリフトトラフィックの送信完了。")
-    print("次回の監視ジョブ（1 時間ごと）で制約違反として検出される可能性があります。")
-    print("監視結果の確認:")
-    print(f"  aws sagemaker list-monitoring-executions "
-          f"--monitoring-schedule-name {PREFIX}-abalone-dq-schedule --region {REGION}")
+    print("送信した入力はエンドポイントのデータキャプチャ機能で S3 に保存されます。")
+    print("キャプチャデータの確認（数分後に現れます）:")
+    bucket_hint = f"s3://<default-bucket>/{PREFIX}/monitor/datacapture/{ENDPOINT_NAME}/"
+    print(f"  aws s3 ls {bucket_hint} --recursive --region {REGION}")
+    print("")
+    print("このドリフトデータを model_monitor_baseline.py で生成した")
+    print("constraints.json（各特徴量の期待レンジ）と突き合わせると、")
+    print("length などが期待レンジを大きく外れている＝ドリフトだと分かります。")
+    print("")
+    print("※ SageMaker Model Monitor は 2026-06-30 付でメンテナンスモードに移行し、")
+    print("  新規顧客は監視スケジュールを作成できません。定期監視が必要な場合は、")
+    print("  キャプチャデータと constraints.json を比較する処理を自前のジョブ")
+    print("  （Processing / Lambda + EventBridge）として実装します。")
+    print("  参照: https://docs.aws.amazon.com/general/latest/gr/maintenance_services.html")
     print("\nポイント: ドリフトを検知したら、再学習（イベント駆動/スケジュール/オンデマンド）")
     print("や手動介入で対処します。")
 
