@@ -99,9 +99,9 @@ def create():
         )
     except botocore.exceptions.ClientError as e:
         msg = e.response.get("Error", {}).get("Message", "")
-        # SageMaker Model Monitor は 2026-06-30 付でメンテナンスモードに移行し、
-        # 新規顧客はジョブ定義（CreateDataQualityJobDefinition）を作成できない。
-        # 参照: https://docs.aws.amazon.com/general/latest/gr/maintenance_services.html
+        # SageMaker Model Monitor は新規顧客に非公開となり、ジョブ定義
+        # （CreateDataQualityJobDefinition）を新規作成できない。
+        # 参照: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-availability-change.html
         if "maintenance mode" in msg or "not available to new customers" in msg:
             _print_maintenance_notice(baseline_results)
             return
@@ -115,14 +115,15 @@ def create():
 
 
 def _print_maintenance_notice(baseline_results):
-    """Model Monitor がメンテナンスモードでスケジュール作成できない場合の案内。"""
+    """Model Monitor が新規顧客に非公開でスケジュール作成できない場合の案内。"""
     print("\n" + "=" * 66)
-    print(" 注意: SageMaker Model Monitor はメンテナンスモードです")
+    print(" 注意: SageMaker Model Monitor は新規顧客に非公開です")
     print("=" * 66)
-    print("Amazon SageMaker AI – Model Monitor は 2026-06-30 付でメンテナンス")
-    print("モードに移行しました。新規のお客様は監視スケジュール（データ品質ジョブ")
-    print("定義）を新規作成できません（既存のお客様は影響を受けません）。")
-    print("  参照: https://docs.aws.amazon.com/general/latest/gr/maintenance_services.html")
+    print("Amazon SageMaker AI – Model Monitor は新規のお客様には公開されていません")
+    print("（既存のお客様は継続利用可。新機能の追加予定はありません）。")
+    print("そのため監視スケジュール（CreateMonitoringSchedule / データ品質ジョブ定義）")
+    print("を新規作成できません。")
+    print("  参照: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-availability-change.html")
     print("")
     print("このハンズオンで学べること（スケジュール作成なしでも成立）:")
     print(f"  - ベースライン（statistics.json / constraints.json）は生成済み:")
@@ -131,9 +132,13 @@ def _print_maintenance_notice(baseline_results):
     print("  - キャプチャデータ（enable_data_capture.py で S3 に保存）を")
     print("    このベースラインと突き合わせることで、ドリフト検知の考え方を確認できます。")
     print("")
-    print("推奨代替: 定期監視が必要な場合は、キャプチャデータと constraints.json を")
-    print("比較する処理を自前のジョブ（Processing / Lambda + EventBridge など）として")
-    print("実装し、逸脱を CloudWatch メトリクス/アラームに送る方式が使えます。")
+    print("AWS 公式の推奨代替（Model Monitor の置き換え）:")
+    print("  オープンソースの SageMaker AI monitoring solutions")
+    print("  （SageMaker AI MLflow Apps + Evidently AI）+ Amazon QuickSight + CloudWatch")
+    print("  - データ品質ドリフト: Evidently AI の DataDriftPreset など")
+    print("  - しきい値超過を SNS/CloudWatch アラームで通知、EventBridge で定期実行")
+    print("  - リアルタイムエンドポイント向けの出発点: 'Predictive ML Endpoint Monitoring'")
+    print("    （aws-samples の SageMaker AI monitoring solutions リポジトリ）")
     print("")
     print("→ スケジュールは作成されていないため削除は不要です。")
     print("  生成したベースラインを確認したら次へ進んでください。")

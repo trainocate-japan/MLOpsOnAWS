@@ -9,11 +9,13 @@ AnyCompany Consulting のアワビ予測モデルは本番稼働中ですが、�
 このモジュールでは、エンドポイントのデータキャプチャを有効化し、SageMaker Model Monitor で
 ベースラインを作成し、ドリフトを検知したときの再学習・トラブルシューティングのアプローチを学びます。
 
-> **重要**: Amazon SageMaker AI – Model Monitor は **2026-06-30 付でメンテナンスモード**に移行しており、
-> **新規のお客様は監視スケジュールを新規作成できません**（既存のお客様は影響なし）。
+> **重要**: Amazon SageMaker AI – Model Monitor は **新規のお客様には公開されていません**
+> （既存のお客様は継続利用可）。そのため**監視スケジュールを新規作成できません**。
 > 本ハンズオンはベースライン生成までを実行し、スケジュールの代替として
 > 「キャプチャデータを constraints.json と突き合わせる」方法でドリフト検知の考え方を学びます。
-> 参照: [AWS サービスのメンテナンスモード](https://docs.aws.amazon.com/general/latest/gr/maintenance_services.html)
+> AWS 公式の推奨代替は、オープンソースの SageMaker AI monitoring solutions
+> （MLflow Apps + Evidently AI）＋ Amazon QuickSight ＋ Amazon CloudWatch です。
+> 参照: [Model Monitor availability change](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-availability-change.html)
 
 ## 学習目標
 
@@ -21,7 +23,7 @@ AnyCompany Consulting のアワビ予測モデルは本番稼働中ですが、�
 
 1. **データキャプチャを設定する**: エンドポイントの入力/出力を S3 にキャプチャする
 2. **ベースラインを作成する**: 学習データから統計と制約のベースラインを生成する
-3. **ドリフト検知の仕組みを理解する**: キャプチャデータをベースライン（constraints.json）と比較する（Model Monitor のスケジュールはメンテナンスモードのため、代替手段も理解する）
+3. **ドリフト検知の仕組みを理解する**: キャプチャデータをベースライン（constraints.json）と比較する（Model Monitor のスケジュールは新規顧客に非公開のため、代替手段も理解する）
 4. **ドリフトを発生させる**: 分布をずらしたトラフィックでドリフトをシミュレートする
 5. **再学習アプローチを説明する**: イベント駆動 / スケジュール / オンデマンド
 6. **リネージでトラブルシュートする**: Lineage Tracking で関連アーティファクトを特定する
@@ -33,10 +35,10 @@ AnyCompany Consulting のアワビ予測モデルは本番稼働中ですが、�
 ```
 
 - 本来は「ベースライン作成 → 監視スケジュール → 自動でドリフト検知」の流れですが、
-  Model Monitor のスケジュールがメンテナンスモードのため、本ハンズオンでは
+  Model Monitor のスケジュールが新規顧客に非公開のため、本ハンズオンでは
   「キャプチャデータと constraints.json を比較する」ステップで検知の考え方を学びます。
-- 定期実行が必要な場合は、この比較処理を自前のジョブ（SageMaker Processing /
-  Lambda + EventBridge）として実装します。
+- 定期実行・可視化が必要な場合は、AWS 公式推奨の代替（オープンソースの
+  SageMaker AI monitoring solutions〔MLflow Apps + Evidently AI〕＋ QuickSight ＋ CloudWatch）で置き換えます。
 
 ## 再学習のアプローチ
 
@@ -48,7 +50,7 @@ AnyCompany Consulting のアワビ予測モデルは本番稼働中ですが、�
 
 ## 使用する AWS サービス
 
-- Amazon SageMaker Model Monitor（データキャプチャ、ベースライン生成）※監視スケジュールは 2026-06-30 よりメンテナンスモード（新規顧客は作成不可）
+- Amazon SageMaker Model Monitor（データキャプチャ、ベースライン生成）※監視スケジュールは新規顧客に非公開（作成不可）
 - Amazon SageMaker AI（エンドポイント）
 - Amazon CloudWatch（メトリクス・アラーム）
 - Amazon S3（キャプチャデータ・ベースライン結果）

@@ -2,13 +2,17 @@
 
 > 監視エンドポイントは課金対象です。**完了後は必ず削除**してください。
 
-> **重要（サービスの提供状況）**: Amazon SageMaker AI – Model Monitor は **2026-06-30 付でメンテナンスモード**に移行しました。
-> **新規のお客様は監視スケジュール（データ品質ジョブ定義）を新規作成できません**（既存のお客様は影響を受けません）。
-> 参照: [AWS サービスのメンテナンスモード](https://docs.aws.amazon.com/general/latest/gr/maintenance_services.html)
+> **重要（サービスの提供状況）**: Amazon SageMaker AI – Model Monitor は **新規のお客様には公開されていません**
+> （既存のお客様は継続利用可・新機能の追加なし）。そのため**監視スケジュール（`CreateMonitoringSchedule` /
+> データ品質ジョブ定義）を新規作成できません**。
+> 参照: [Model Monitor availability change](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-availability-change.html)
+>
+> **AWS 公式の推奨代替**: オープンソースの SageMaker AI monitoring solutions（SageMaker AI MLflow Apps + Evidently AI）
+> ＋ Amazon QuickSight ＋ Amazon CloudWatch の組み合わせ。
 >
 > 本ハンズオンは、この制約下でも学習が成立するよう次の方針で進めます。
 > - **ベースライン生成**（statistics.json / constraints.json）までは実行して確認します。
-> - **監視スケジュール作成**は試行し、メンテナンスモードで失敗した場合はスクリプトが自動で案内を表示して正常終了します（エラーで止まりません）。
+> - **監視スケジュール作成**は試行し、非公開エラーの場合はスクリプトが自動で代替案内を表示して正常終了します（エラーで止まりません）。
 > - スケジュールの代替として、**キャプチャデータを constraints.json と突き合わせて**ドリフトの考え方を学びます。
 
 ## パート 1: データキャプチャの有効化（15分）
@@ -43,7 +47,7 @@ python model_monitor_baseline.py
 
 - 学習データから **statistics.json（統計）** と **constraints.json（制約）** を生成します。
 - 続けて監視スケジュール作成を**試行**します。
-  - メンテナンスモードの環境では `ValidationException`（maintenance mode）となり、
+  - 新規顧客に非公開の環境では `ValidationException`（maintenance mode）となり、
     スクリプトが**代替案内を表示して正常終了**します（エラーで止まりません）。
   - スケジュールが作成された場合のみ、後片付けで `--delete` が必要になります。
 
@@ -83,10 +87,12 @@ aws s3 ls s3://$BUCKET/mlops-handson/monitor/datacapture/mlops-handson-abalone-m
 - キャプチャされた入力の `length` などが、`constraints.json` の期待レンジを大きく外れていることを確認します。
   これが「データドリフトを検知する」という考え方の中核です。
 
-> **メンテナンスモードでのドリフト検知の代替**: SageMaker の自動監視スケジュールが使えない場合でも、
-> キャプチャデータ（S3）と `constraints.json` を比較する処理を自前のジョブ
-> （SageMaker Processing / Lambda + EventBridge など）として実装し、逸脱を CloudWatch メトリクス・
-> アラームに送れば、同等のドリフト監視を構成できます。
+> **自動監視の代替（AWS 公式推奨）**: SageMaker の自動監視スケジュールが使えない場合は、
+> オープンソースの **SageMaker AI monitoring solutions（MLflow Apps + Evidently AI）** を中心に、
+> **Amazon QuickSight** のダッシュボードと **Amazon CloudWatch**（カスタムメトリクス・異常検知アラーム）を
+> 組み合わせて置き換えます。リアルタイムエンドポイント向けの出発点は `aws-samples` の
+> **"Predictive ML Endpoint Monitoring"** ソリューションです。Evidently の `DataDriftPreset` などで
+> キャプチャデータとベースラインを比較し、逸脱を SNS/CloudWatch で通知、EventBridge で定期実行します。
 
 **ディスカッション**: ML モデルを監視するとき、どんな運用上の課題が予想されますか？（監視の粒度・しきい値の決め方・誤検知・コスト）
 
@@ -127,14 +133,15 @@ python enable_data_capture.py --delete        # エンドポイント（課金�
 cd ~/handson && bash cleanup_all.sh
 ```
 
-> メンテナンスモードでスケジュールが作成されなかった場合、`--delete` は「見つからない（スキップ）」と表示されます。
+> スケジュールが作成されなかった場合、`--delete` は「見つからない（スキップ）」と表示されます。
 > 課金の観点で最も重要なのは**エンドポイントの削除**です。
 
 ---
 
 ## 参考ドキュメント
 
-- [AWS サービスのメンテナンスモード（Model Monitor を含む）](https://docs.aws.amazon.com/general/latest/gr/maintenance_services.html)
+- [Model Monitor availability change（新規顧客への非公開と推奨代替）](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-availability-change.html)
+- [AWS サービスのメンテナンスモード一覧](https://docs.aws.amazon.com/general/latest/gr/maintenance_services.html)
 - [Amazon SageMaker Model Monitor](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html)
 - [Capture data](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-capture.html)
 - [Create a Baseline](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-byoc-constraints.html)
