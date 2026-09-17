@@ -57,10 +57,13 @@ def deploy():
     )
 
     # データキャプチャ設定（入力と出力を 100% キャプチャ）
+    # sagemaker_session を明示的に渡す。渡さないと内部で引数なしの Session() が
+    # 生成され、リージョン未解決で "Must setup local AWS configuration ..." エラーになる。
     capture_config = DataCaptureConfig(
         enable_capture=True,
         sampling_percentage=100,
         destination_s3_uri=capture_uri,
+        sagemaker_session=session,
     )
 
     print(f"エンドポイントをデプロイ中: {ENDPOINT_NAME}...")
